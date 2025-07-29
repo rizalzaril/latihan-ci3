@@ -1,0 +1,73 @@
+<?php
+
+
+defined('BASEPATH') or exit('No direct script access allowed');
+
+
+class AuthModel extends CI_Model
+{
+
+	private $table = 'users';
+
+
+	public function register($data)
+	{
+		// $this->db->insert($this->table, $data);
+		// return $this->db->insert_id();
+
+		$this->db->insert('users', $data);
+		return $this->db->insert_id(); // return id terakhir
+	}
+
+	public function getProfileByUserId($user_id)
+	{
+		return $this->db->get_where('profiles', ['user_id' => $user_id])->row_array();
+	}
+
+	public function updateProfile($user_id, $data)
+	{
+		$this->db->where('user_id', $user_id);
+		return $this->db->update('profiles', $data);
+	}
+
+	public function insertProfile($data)
+	{
+		return $this->db->insert('profiles', $data);
+	}
+
+
+	public function getUsersEmail($email)
+	{
+		return $this->db->get_where($this->table, ['email' => $email])->row();
+	}
+
+	public function getUsersProfile($user_id)
+	{
+		$this->db->select('users.id, users.name, users.email, users.kode_user, profiles.address, profiles.phone');
+		$this->db->from('users');
+		$this->db->join('profiles', 'profiles.user_id = users.id', 'left'); // pakai left join agar tidak error jika profile kosong
+		$this->db->where('users.id', $user_id);
+		return $this->db->get()->row();
+	}
+
+
+	public function updatePassword($email, $password)
+	{
+		return $this->db->update($this->table, ['password' => $password, ['email' => $email]]);
+	}
+
+	public function getUserToken($token)
+	{
+		return $this->db->get_where('user_token', ['user_token' => $token])->row();
+	}
+
+	public function insertToken($data)
+	{
+		return $this->db->insert('user_token', $data);
+	}
+
+	public function deleteToken($email)
+	{
+		return $this->db->delete('user_token', ['email' => $email]);
+	}
+}
