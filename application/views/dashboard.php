@@ -102,6 +102,50 @@
 					<p><?= $user->address ?></p>
 					<p><?= $user->phone ?></p>
 
+					<!-- Tombol modal ubah password -->
+					<a href="<?= base_url('/auth/ubah_password_view') ?>" target="_blank" class="btn btn-primary mt-2">
+						Ubah password
+					</a>
+
+					<!-- Modal ubah password -->
+
+					<!-- Modal Tambah/Edit Profile -->
+					<div class="modal fade" id="updatePasswordModal" tabindex="-1" aria-labelledby="updatePasswordLabel" aria-hidden="true">
+						<div class="modal-dialog ">
+							<form action="<?= base_url('/auth/ubah_password') ?>" method="post">
+								<input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>" />
+								<div class="modal-content">
+									<?php if ($this->session->flashdata('errors')): ?>
+										<div class="alert alert-danger">
+											<?= $this->session->flashdata('errors') ?>
+										</div>
+									<?php endif; ?>
+
+									<div class="modal-header">
+										<h5 class="modal-title" id="updatePasswordLabel">Ubah password anda</h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+									</div>
+									<div class="modal-body">
+										<div class="mb-3">
+											<label for="address" class="form-label">Password lama</label>
+											<input type="text" class="form-control" id="passwordLama" name="passwordLama" required></input>
+										</div>
+										<div class="mb-3">
+											<label for="phone" class="form-label">Password baru</label>
+											<input type="text" class="form-control" id="passwordBaru" name="passwordBaru" required>
+											<small id="p" class="text-danger d-none">Hanya boleh angka</small>
+										</div>
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+										<button type="submit" class="btn btn-success">Simpan</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+
+
 				</div>
 			</div>
 		</div>

@@ -41,6 +41,16 @@ class AuthModel extends CI_Model
 		return $this->db->get_where($this->table, ['email' => $email])->row();
 	}
 
+	public function getUsersPassword($user_id)
+	{
+		$this->db->select('password');
+		$this->db->from('users');
+		$this->db->where('users.id', $user_id);
+		return $this->db->get()->row();
+	}
+
+
+
 	public function getUsersProfile($user_id)
 	{
 		$this->db->select('users.id, users.name, users.email, users.kode_user, profiles.address, profiles.phone');
@@ -51,14 +61,22 @@ class AuthModel extends CI_Model
 	}
 
 
+	public function ubahPassword($newPassword, $user_id)
+	{
+		$this->db->where('id', $user_id);
+		$this->db->update('users', ['password' => $newPassword]);
+	}
+
+
 	public function updatePassword($email, $password)
 	{
-		return $this->db->update($this->table, ['password' => $password, ['email' => $email]]);
+		$this->db->where('email', $email);
+		$this->db->update('users', ['password' => $password]);
 	}
 
 	public function getUserToken($token)
 	{
-		return $this->db->get_where('user_token', ['user_token' => $token])->row();
+		return $this->db->get_where('user_token', ['token' => $token])->row();
 	}
 
 	public function insertToken($data)

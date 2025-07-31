@@ -12,7 +12,7 @@ class Auth extends CI_Controller
 		parent::__construct();
 
 		$this->load->model('AuthModel');
-		$this->load->library(['session', 'form_validation']);
+		$this->load->library(['session', 'form_validation', 'encryption']);
 	}
 
 
@@ -122,6 +122,108 @@ class Auth extends CI_Controller
 			}
 		}
 	}
+
+
+	public function ubah_password_view()
+	{
+		$user_id = $this->session->userdata('id');
+		$password = $this->AuthModel->getUsersPassword($user_id);
+		foreach ($password as $pass) {
+			echo $pass;
+		}
+		$this->load->view('/auth/ubah_password', $password);
+	}
+
+	public function ubah_password()
+	{
+		$this->form_validation->set_rules('oldPassword', 'Old Password', 'required|trim');
+		$this->form_validation->set_rules('newPassword', 'New Password', 'required|min_length[8]|trim');
+
+		$old_password = $this->input->post('oldPassword');
+
+		if ($this->form_validation->run() == false) {
+			redirect('/auth/ubah_password_view');
+		} else {
+			$user_id = $this->session->userdata('id');
+			$password = $this->AuthModel->getUsersPassword($user_id);
+
+			if ($password && password_verify($old_password, $password->password)) {
+				$new_password = password_hash($this->input->post('newPassword'), PASSWORD_DEFAULT);
+				$this->AuthModel->ubahPassword($new_password, $user_id);
+				$this->session->set_flashdata('success', 'Password berhasil diubah.');
+				redirect('/auth/ubah_password_view');
+			} else {
+				$this->session->set_flashdata('error', 'Password lama anda salah!');
+				redirect('/auth/ubah_password_view');
+			}
+		}
+	}
+
+
+	public function forgot_password()
+	{
+		$this->form_validation->set_rules('email', 'Email', 'required|valid_email|trim');
+
+		if ($this->form_validation->run() == false) {
+			return $this->load->view('auth/forgot_password');
+		} else {
+
+			$email = $this->input->post('email', true);
+			$user = $this->AuthModel->getUsersEmail($email);
+
+			if ($user) {
+				$token = bin2hex(random_bytes(32));
+				$token_data = [
+
+					'email' => $email,
+					'token' => $token,
+					'created_at' => time(),
+				];
+
+				$this->AuthModel->insertToken($token_data);
+
+				$reset_link = base_url("auth/reset_password?token=$token");
+				log_message("debug", "Reset password link: $reset_link");
+
+				// $this->session->set_flashdata('success', 'Link reset password telah dikirimkan (lihat log)');
+				// echo ($reset_link);
+
+				$this->session->set_flashdata('reset_link', $reset_link);
+				redirect('auth/forgot_password');
+			} else {
+				$this->session->set_flashdata('error', 'Email tidak ditemukan.');
+				redirect('auth/forgot_password');
+			}
+		}
+	}
+
+
+	public function reset_password()
+	{
+		$token = $this->input->get('token');
+		$user_token = $this->AuthModel->getUserToken($token);
+
+		if (!$user_token) {
+			show_error('Token tidak valid atau kadaluarsa');
+		}
+
+		$this->form_validation->set_rules('password', 'Password Baru', 'required|min_length[6]|trim');
+
+		if ($this->form_validation->run() == false) {
+			$this->load->view('auth/reset_password', ['token' => $token]);
+		} else {
+			$new_password = password_hash($this->input->post('password'), PASSWORD_DEFAULT);
+			$this->AuthModel->updatePassword($user_token->email, $new_password);
+			$this->AuthModel->deleteToken($user_token->email);
+			$this->session->set_flashdata('success', 'Password berhasil diubah.');
+			redirect('auth/login');
+		}
+	}
+
+
+
+
+
 
 	public function save_profile()
 	{
