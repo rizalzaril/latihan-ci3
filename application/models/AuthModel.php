@@ -88,4 +88,16 @@ class AuthModel extends CI_Model
 	{
 		return $this->db->delete('user_token', ['email' => $email]);
 	}
+
+	public function log_activity($user_id, $activity)
+	{
+		$this->db->insert(
+			'log_activity',
+			[
+				'user_id' => $user_id,
+				'activity' => $activity,
+				'created_at' => date('Y:m:d H:i:s'),
+			]
+		);
+	}
 }

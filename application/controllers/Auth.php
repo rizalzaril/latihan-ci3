@@ -115,6 +115,10 @@ class Auth extends CI_Controller
 				];
 
 				$this->session->set_userdata($data);
+
+				//log activity
+				$this->AuthModel->log_activity($user->id, 'Login ke sistem');
+
 				redirect('/dashboard');
 			} else {
 				$this->session->set_flashdata('error', 'Email atau Password anda salah!');
@@ -144,13 +148,22 @@ class Auth extends CI_Controller
 		if ($this->form_validation->run() == false) {
 			redirect('/auth/ubah_password_view');
 		} else {
+
+			//cek session login by id
 			$user_id = $this->session->userdata('id');
+
+			//tampung user id ke model
 			$password = $this->AuthModel->getUsersPassword($user_id);
 
 			if ($password && password_verify($old_password, $password->password)) {
 				$new_password = password_hash($this->input->post('newPassword'), PASSWORD_DEFAULT);
 				$this->AuthModel->ubahPassword($new_password, $user_id);
 				$this->session->set_flashdata('success', 'Password berhasil diubah.');
+
+				//log activity
+				$this->AuthModel->log_activity($user_id, 'Mengubah password');
+
+
 				redirect('/auth/ubah_password_view');
 			} else {
 				$this->session->set_flashdata('error', 'Password lama anda salah!');
