@@ -40,6 +40,27 @@
 				<input type="password" class="form-control" id="password" name="password" required>
 			</div>
 
+			<!-- Tampilkan CAPTCHA -->
+
+
+			<!-- Tampilkan CAPTCHA -->
+			<?php if (isset($captcha['image'])): ?>
+				<div class="mb-3">
+					<label class="form-label">Kode Keamanan</label>
+					<div class="d-flex align-items-center">
+						<p id="captcha-image" class="me-2 mb-0"><?= $captcha['image']; ?></p>
+						<!-- <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshCaptcha()" title="Refresh CAPTCHA">⟳</button> -->
+
+					</div>
+				</div>
+			<?php else: ?>
+				<p class="text-danger">Captcha gagal dimuat. Coba reload halaman.</p>
+			<?php endif; ?>
+
+
+			<input type="text" name="captcha" style="text-transform: uppercase;" class="form-control mb-3" placeholder="Masukkan kode di atas" required>
+
+
 			<button type="submit" class="btn btn-primary w-100">Login</button>
 
 			<div class="text-center mt-3">
@@ -52,3 +73,14 @@
 		</div>
 	</div>
 </div>
+
+<script>
+	function refreshCaptcha() {
+		const container = document.getElementById('captcha-image');
+		const img = container.querySelector('img'); // Ambil elemen <img> dari dalam <p>
+		if (!img) return;
+
+		const currentSrc = img.src.split('?')[0]; // Hapus query timestamp lama
+		img.src = currentSrc + '?t=' + new Date().getTime(); // Tambahkan timestamp baru
+	}
+</script>

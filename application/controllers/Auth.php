@@ -87,45 +87,149 @@ class Auth extends CI_Controller
 
 	public function login()
 	{
+		if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+			$vals = array(
+				'img_path'      => './captcha/',
+				'img_url'       => base_url('captcha/'),
+				'font_path' => FCPATH . 'system/fonts/texb.ttf',
+				'img_width'     => 500,
+				'img_height'    => 50,
+				'expiration'    => 7200,
+				'word_length'   => 8,
+				'font_size'     => 200,
+				'img_id'        => 'Imageid',
+				'pool'          => '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
 
+				// White background and border, black text and red grid
+				'colors'        => array(
+					'background' => array(255, 255, 255),
+					'border' => array(255, 255, 255),
+					'text' => array(0, 0, 0),
+					'grid' => array(255, 40, 40)
+				)
+			);
+
+			$captcha = create_captcha($vals);
+
+			if ($captcha === false) {
+				log_message('error', 'CAPTCHA gagal dibuat: ' . print_r($vals, true));
+				$data['captcha'] = ['image' => '<span style="color:red;">Gagal memuat captcha</span>'];
+			} else {
+				$this->session->set_userdata('captcha', $captcha['word']);
+				$data['captcha'] = $captcha;
+			}
+
+
+			return $this->load->view('auth/login', $data);
+		}
+
+
+		// Proses POST Login
 		$email = $this->input->post('email', true);
 		$password = $this->input->post('password');
+		$inputCaptcha = $this->input->post('captcha');
 
 		$this->form_validation->set_rules('email', 'Email', 'required|valid_email|trim');
 		$this->form_validation->set_rules('password', 'Password', 'required|min_length[8]|trim');
+		$this->form_validation->set_rules('captcha', 'Kode Captcha', 'required|trim');
 
-		//cek jika validasi gagal
 		if ($this->form_validation->run() == false) {
-			return $this->load->view('auth/login');
+			return redirect('auth/login');
+		}
+
+		// Validasi CAPTCHA
+		if (strtoupper($inputCaptcha) != strtoupper($this->session->userdata('captcha'))) {
+			$this->session->set_flashdata('error', 'Kode Captcha salah!');
+			return redirect('auth/login');
+		}
+
+		// Validasi user dan password
+		$user = $this->AuthModel->getUsersEmail($email);
+		if ($user && password_verify($password, $user->password)) {
+			$data = [
+				'id' => $user->id,
+				'email' => $user->email,
+				'name' => $user->name,
+				'role' => $user->role,
+				'created_at' => $user->created_at,
+				'last_login' => $user->last_login,
+			];
+			$this->session->set_userdata($data);
+			$this->AuthModel->update_last_login($user->id);
+			$this->AuthModel->log_activity($user->id, 'Login ke sistem');
+			redirect('/dashboard');
 		} else {
-
-			//cek email user
-			$user = $this->AuthModel->getUsersEmail($email);
-
-			//Jika password terverifikasi/benar
-			if ($user && password_verify($password, $user->password)) {
-				$data = [
-
-					'id' => $user->id,
-					'email' => $user->email,
-					'name' => $user->name,
-					'role' => $user->role,
-					'created_at' => $user->created_at,
-
-				];
-
-				$this->session->set_userdata($data);
-
-				//log activity
-				$this->AuthModel->log_activity($user->id, 'Login ke sistem');
-
-				redirect('/dashboard');
-			} else {
-				$this->session->set_flashdata('error', 'Email atau Password anda salah!');
-				redirect('auth/login');
-			}
+			$this->session->set_flashdata('error', 'Email atau Password salah!');
+			redirect('auth/login');
 		}
 	}
+
+
+	public function test_write()
+	{
+		if (is_writable('./captcha')) {
+			echo "Folder captcha/ bisa ditulis ✔️";
+		} else {
+			echo "Folder captcha/ TIDAK bisa ditulis ❌";
+		}
+	}
+
+	public function test_captcha()
+	{
+		$this->load->helper('captcha');
+
+		$vals = array(
+			'img_path'   => FCPATH . 'captcha/',
+			'img_url'    => base_url('captcha/'),
+			'img_width'  => 150,
+			'img_height' => 50,
+			'expiration' => 7200,
+			'word_length' => 6,
+			'font_size' => 16,
+			'pool' => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+
+			// ✅ Gunakan salah satu font_path SAJA dan pastikan path ini BENAR!
+			'font_path' => 'C:/xampp8.0/htdocs/pii/system/fonts/texb.ttf',
+
+			'colors' => array(
+				'background' => array(255, 255, 255),
+				'border' => array(255, 255, 255),
+				'text' => array(0, 0, 0),
+				'grid' => array(255, 240, 240)
+			)
+		);
+
+		echo '<pre>';
+		echo 'Checking font path: ' . $vals['font_path'] . "\n";
+		echo file_exists($vals['font_path']) ? '✔ Font file ditemukan' : '❌ Font file TIDAK ditemukan';
+		echo "\nChecking folder captcha: " . $vals['img_path'] . "\n";
+		echo is_writable($vals['img_path']) ? '✔ Folder captcha bisa ditulis' : '❌ Folder captcha TIDAK bisa ditulis';
+		echo '</pre>';
+
+		$captcha = create_captcha($vals);
+
+		echo '<pre>';
+		var_dump($captcha);
+		echo '</pre>';
+
+		if ($captcha !== false) {
+			echo $captcha['image'];
+		} else {
+			echo '<p style="color:red;">❌ CAPTCHA gagal dibuat. Pastikan folder <code>/captcha</code> bisa ditulis & file font <code>texb.ttf</code> ada dan bisa diakses.</p>';
+		}
+	}
+
+
+
+
+
+	public function logout()
+	{
+		$this->session->unset_userdata(['id', 'email', 'name', 'role', 'created_at', 'last_login']);
+		$this->session->sess_destroy();
+		redirect('auth/login');
+	}
+
 
 
 	public function ubah_password_view()

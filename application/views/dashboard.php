@@ -15,7 +15,14 @@
 			<div class="card">
 				<div class="card-body">
 					<h3>Hello, <?= $this->session->userdata('name') ?></h3>
+
+
+					<!-- Button show anggota -->
+					<a href="<?= base_url('/dashboard/list_anggota') ?>" class="btn btn-primary mt-2 mb-2" rel="noopener noreferrer">Lihat anggota</a>
+
 					<h4>Anda bergabung sejak <span class="text-success"> <?= $this->session->userdata('created_at') ?> </span> </h4>
+					<p>Terakhir login: <?= $this->session->userdata('last_login') ? date('d-m-Y H:i:s', strtotime($this->session->userdata('last_login'))) : 'Belum pernah login sebelumnya'; ?></p>
+
 					<hr>
 					<h3>Profile anda</h3>
 					<span>
@@ -145,6 +152,9 @@
 						</div>
 					</div>
 
+					<a href="<?= base_url('/auth/logout') ?>" class="btn btn-primary mt-2">
+						Logout
+					</a>
 
 				</div>
 			</div>

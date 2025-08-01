@@ -24,6 +24,13 @@ class AuthModel extends CI_Model
 		return $this->db->get_where('profiles', ['user_id' => $user_id])->row_array();
 	}
 
+	public function update_last_login($user_id)
+	{
+		$this->db->where('id', $user_id);
+		$this->db->update('users', ['last_login' => date('Y-m-d H:i:s')]);
+	}
+
+
 	public function updateProfile($user_id, $data)
 	{
 		$this->db->where('user_id', $user_id);
@@ -91,13 +98,13 @@ class AuthModel extends CI_Model
 
 	public function log_activity($user_id, $activity)
 	{
-		$this->db->insert(
-			'log_activity',
-			[
-				'user_id' => $user_id,
-				'activity' => $activity,
-				'created_at' => date('Y:m:d H:i:s'),
-			]
-		);
+		$ip_public = @file_get_contents('https://api.ipify.org'); // dapatkan IP publik asli
+
+		$this->db->insert('log_activity', [
+			'user_id'     => $user_id,
+			'activity'    => $activity,
+			'ip_address'  => $ip_public ?: $this->input->ip_address(), // fallback ke CI IP
+			'created_at'  => date('Y-m-d H:i:s'),
+		]);
 	}
 }
